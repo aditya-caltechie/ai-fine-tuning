@@ -10,8 +10,11 @@ Prereqs:
   - `GROQ_API_KEY=...`
 
 Service files:
-- **Modal service**: `src/pricing_service.py` (deployed app name: `pricer-service`)
+- **Modal service**: `src/inference/pricing_service.py` (deployed app name: `pricer-service`)
 - **Client runner**: `src/main.py`
+- **Inference helpers**: `src/inference/` (agent wrapper + preprocessor)
+- **Reference-only training**: `src/training/`
+- **Reference-only evaluation**: `src/evaluation/`
 
 Commands (run from repo root):
 
@@ -30,19 +33,22 @@ uv run python src/main.py logs
 Optional: set a different default preprocess model:
 - Add to `.env`: `PRICER_PREPROCESSOR_MODEL=groq/openai/gpt-oss-20b` (or another LiteLLM-supported model)
 
-## Convert a Colab notebook to a commented Python script
+Notes:
+- `price` and `agent` both call the same deployed Modal method (`Pricer.price`). If you pass raw text (like `"iphone 10"`), both commands run an LLM-based preprocessor first, which can affect the final price.
+- To make repeated runs stable for the same raw input, the preprocessor uses best-effort deterministic settings and a small on-disk cache at `.cache/pricer_preprocess_cache.json`.
+  - You can control this with env vars like `PRICER_PREPROCESSOR_TEMPERATURE`, `PRICER_PREPROCESSOR_SEED`, `PRICER_PREPROCESSOR_CACHE`.
+
+## Repo structure (quick guide)
+
+- **`src/inference/`**: all runtime inference/service code (Modal service, agent wrapper, preprocessing)
+- **`src/main.py`**: CLI entrypoint; kept at `src/` so commands stay the same
+- **`src/training/`**: reference-only scripts explaining LoRA/QLoRA training (not intended to run locally on Mac)
+- **`src/evaluation/`**: reference-only scripts showing baseline evaluation (base model, no LoRA)
+
+## Convert a Colab notebook to a commented Python script (optional)
 
 Because Google Drive/Colab links often require sign-in, the simplest workflow is:
 
 - In Colab: **File → Download → Download `.ipynb`**
 - Put the downloaded notebook into this repo (example: `my_notebook.ipynb`)
-- Run:
-
-```bash
-python convert_ipynb_to_py.py my_notebook.ipynb -o my_notebook.py
-```
-
-What you get in the output `.py`:
-- Markdown cells → comment blocks
-- Code cells → normal Python code
-- Clear `# Cell N (type)` separators between cells
+- Convert it using your preferred tool (for example, `jupytext`) or a simple notebook-to-script exporter.
