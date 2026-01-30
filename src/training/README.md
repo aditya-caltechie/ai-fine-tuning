@@ -1,76 +1,79 @@
-# Training vs Fine-tuning (what’s the difference?)
+# Training vs Fine-tuning (in the context of *your repos*)
 
-This folder is **reference-only**. In this repo, the production runtime lives in `src/inference/`, while “training/fine-tuning” material is kept for learning and documentation.
+This folder is **reference-only**. In this repo, production runtime lives in `src/inference/` (Modal service + CLI), while “training/fine-tuning” material is here mainly to explain concepts and workflows.
 
-## Definitions (plain English)
+## The short version
 
-- **Training a model (from scratch / pretraining)**  
-  You start with random (or mostly untrained) weights and teach the model general language (or multimodal) behavior from a *very large* dataset.  
-  This is how foundation models are created.
+- **Training from scratch**: you build a model (architecture) and learn weights from random initialization on your dataset.
+- **Fine-tuning**: you start from a strong pre-trained model (LLM) and adapt it to your task with additional training.
+- **LoRA / QLoRA**: a common, practical fine-tuning style for LLMs where you train small adapter weights (often with the base model quantized).
 
-- **Fine-tuning a model**  
-  You start with an already-trained base model and adapt it to your task/domain by continuing training on a *much smaller* dataset.
+## How your two repos map to these ideas
 
-- **LoRA / QLoRA fine-tuning (common in practice)**  
-  A parameter-efficient fine-tuning method: instead of updating all model weights, you train small “adapter” matrices (LoRA).  
-  With **QLoRA**, the base model is quantized (e.g., 4-bit) to reduce memory, while training the LoRA adapters.
+### Example of “training from scratch” (your `ai-deep-learning` repo)
 
-## What changes when you “train” vs “fine-tune”?
+In your other repo (`aditya-caltechie/ai-deep-learning`), you’re doing classic training-from-scratch:
 
-- **Goal**
-  - **Training**: learn broad capabilities from general data.
-  - **Fine-tuning**: specialize an existing model for a narrower behavior (task, style, domain).
+- **You define the model architecture** (a residual MLP) and initialize it with random weights.
+- **You run a training loop** (optimize weights end-to-end) on a Hugging Face dataset like `ed-donner/items_lite` / `ed-donner/items_full`.
+- **You save a local weights file** (a `.pth` checkpoint) and then evaluate.
 
-- **Data**
-  - **Training**: typically billions+ tokens, diverse sources.
-  - **Fine-tuning**: often thousands to millions of tokens; curated and task-focused.
+Repo link: `https://github.com/aditya-caltechie/ai-deep-learning`
 
-- **Compute / cost**
-  - **Training**: extremely expensive (large clusters, long runs).
-  - **Fine-tuning**: much cheaper; LoRA/QLoRA can be done with a single GPU (depending on model size).
+### Example of “fine-tuning” (this `ai-fine-tuning` repo)
 
-- **Risk**
-  - **Training**: highest risk (you can end up with a weak model if data/compute aren’t sufficient).
-  - **Fine-tuning**: lower risk; main failure modes are overfitting, reduced generality, or “forgetting” behaviors.
+This repo is the opposite approach:
 
-- **Output artifacts**
-  - **Training**: a full new base checkpoint.
-  - **Fine-tuning**: either a new full checkpoint **or** (LoRA) a small adapter you load on top of the base model.
+- We start with a **pre-trained LLM** (example used throughout: `meta-llama/Llama-3.2-3B`).
+- We adapt it for the pricing task using **QLoRA / LoRA adapters** (small trainable weights).
+- At inference time, we load **base model + adapter** together.
 
-## When to use which (rules of thumb)
+Relevant places in *this* repo:
 
-### Prefer fine-tuning when…
+- **Colab notebooks (hands-on fine-tuning)**: `src/fine_tuning/notebooks/`
+  - `1_basemodel_evaluation.ipynb` (baseline eval)
+  - `2_fine-tuning_via_QLORA.ipynb` (train adapters)
+  - `3_testing_fine-tuned-model.ipynb` (evaluate fine-tuned)
+- **Plain-Python walkthrough (reference-only)**: `src/fine_tuning/notebooks/lora_training_reference.py`
+- **Serving (loads base + adapter)**: `src/inference/pricing_service.py`
+- **CLI entrypoint (deploy/price/agent/logs)**: `src/inference.py`
 
-- You already have a strong base model that “mostly works”.
-- You need **domain adaptation** (e.g., your product catalog, pricing style, internal terminology).
-- You need **consistent formatting** or structured outputs.
-- You have **limited compute** and a modest dataset.
+## What’s actually different (mechanically)
 
-In this repo’s context: if you want a better price predictor for your product descriptions, **fine-tuning (LoRA/QLoRA)** is the typical choice.
+### Starting point
 
-### Consider training from scratch only when…
+- **Training from scratch**: random weights + your architecture.
+- **Fine-tuning**: pre-trained weights + small task dataset.
 
-- You need a new foundation model because existing base models can’t meet requirements.
-- You have access to **massive datasets + substantial compute**.
-- You need full control over training data, tokenizer, architecture, and licensing constraints.
+### What weights get updated
 
-For most application teams (and for this repo), **training from scratch is not the intended path**.
+- **Training from scratch**: typically *all* parameters are trainable.
+- **Fine-tuning (full)**: often all parameters are trainable (but with a small learning rate).
+- **Fine-tuning (LoRA/QLoRA)**: mostly **only adapter weights** are trained; base model stays frozen (and may be quantized).
 
-## Quick decision checklist
+### Artifacts you produce
 
-If any of these are true, choose **fine-tuning**:
+- **Training from scratch** (often): a local checkpoint like `model.pth`.
+- **LoRA/QLoRA fine-tuning** (often): a small **adapter** you can push to Hugging Face; inference loads adapter on top of the base model.
 
-- “The base model is close; I just need it to behave more like my examples.”
-- “I want better accuracy on my domain-specific distribution.”
-- “I want a small artifact to ship (LoRA adapter) rather than retraining the whole model.”
+## When to use which (practical guidance)
 
-Choose **training from scratch** only if:
+### Use training from scratch when…
 
-- “No available base model can be adapted to my needs.”
-- “I have enough data/compute to pretrain effectively.”
+- No pre-trained model fits your constraints (data modality, licensing, architecture).
+- You have **lots of data** and **enough compute** to train a good model.
+- You want full control over learned representations (and accept higher engineering effort).
 
-## Where to look next in this repo
+### Use fine-tuning when…
 
-- **LoRA/QLoRA walkthrough (reference)**: `src/fine_tuning/notebooks/lora_training_reference.py`
-- **Serving / inference (Modal)**: `src/inference/pricing_service.py` (loads base model + LoRA adapter at container start)
+- A base model already “mostly works”, but you want it to match your domain/task better.
+- You have **limited compute/time** and a smaller curated dataset.
+- You want to ship a small artifact (LoRA adapter) and keep the base model unchanged.
+
+## Where to go next (repo links)
+
+- **Fine-tuning notebooks (Colab workflow)**: `src/fine_tuning/README.md`
+- **Fine-tuning notebooks (files)**: `src/fine_tuning/notebooks/`
+- **Inference + deploy CLI**: `src/inference.py`
+- **Modal service code**: `src/inference/pricing_service.py`
 
