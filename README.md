@@ -1,9 +1,13 @@
 # ai-fine-tuning
 
-## Run Week 8 Day 1 (`src/inference.py`)
+This repo shows an end-to-end LLM fine-tuning + serving workflow for a product pricing task: run QLoRA/LoRA fine-tuning notebooks in src/fine_tuning/, then load the adapter for inference.
+It deploys a Modal pricing service in src/inference/ and provides a CLI (src/inference.py) to deploy, query prices, use an agent wrapper, and stream logs.
+
+## Run (`src/inference.py`)
 
 Prereqs:
 - `uv` installed
+- `uv sync`
 - Modal set up (`uv run modal token set ...`)
 - Modal Secret created for Hugging Face token (usually named **`huggingface-secret`** with key `HF_TOKEN`)
 - `.env` contains your Groq key:
