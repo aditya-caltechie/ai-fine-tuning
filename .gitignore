@@ -1,0 +1,11 @@
+.env
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+
+# Local files   
+src/memory.json
+.DS_Store
+*.ipynb
+*.ipynb_checkpoints/
