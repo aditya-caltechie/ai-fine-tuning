@@ -7,5 +7,4 @@ __pycache__/
 # Local files   
 src/memory.json
 .DS_Store
-*.ipynb
 *.ipynb_checkpoints/
