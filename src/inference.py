@@ -5,14 +5,14 @@ Simple runner for the pricing project.
 Run from repo root:
 
 Step 1 (MUST): deploy the Modal service
-  uv run python src/main.py deploy
+  uv run python src/inference.py deploy
 
 Step 2 (choose one): call the service directly OR use the agent (agent calls same service)
-  uv run python src/main.py price "raw text here"
-  uv run python src/main.py agent "raw text here"
+  uv run python src/inference.py price "raw text here"
+  uv run python src/inference.py agent "raw text here"
 
 Optional: stream remote logs (where container print() shows up)
-  uv run python src/main.py logs
+  uv run python src/inference.py logs
 """
 
 from __future__ import annotations
@@ -36,14 +36,14 @@ USAGE = """\
 Usage (run from repo root):
 
   Step 1 (MUST):
-    uv run python src/main.py deploy
+    uv run python src/inference.py deploy
 
   Step 2 (choose one):
-    uv run python src/main.py price "<raw text>"
-    uv run python src/main.py agent "<raw text>"
+    uv run python src/inference.py price "<raw text>"
+    uv run python src/inference.py agent "<raw text>"
 
   Optional:
-    uv run python src/main.py logs
+    uv run python src/inference.py logs
 """
 
 
@@ -127,7 +127,7 @@ def main() -> int:
     if load_dotenv is not None:
         load_dotenv(override=True)
 
-    # Allow `import preprocessor`, etc. when running `python src/main.py ...`
+    # Allow `import inference.preprocessor`, etc. when running `python src/inference.py ...`
     src_dir_str = str(SRC_DIR)
     if src_dir_str not in sys.path:
         sys.path.insert(0, src_dir_str)

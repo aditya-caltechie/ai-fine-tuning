@@ -1,6 +1,6 @@
 # ai-fine-tuning
 
-## Run Week 8 Day 1 (`src/main.py`)
+## Run Week 8 Day 1 (`src/inference.py`)
 
 Prereqs:
 - `uv` installed
@@ -11,7 +11,7 @@ Prereqs:
 
 Service files:
 - **Modal service**: `src/inference/pricing_service.py` (deployed app name: `pricer-service`)
-- **Client runner**: `src/main.py`
+- **Client runner**: `src/inference.py`
 - **Inference helpers**: `src/inference/` (agent wrapper + preprocessor)
 - **Reference-only training**: `src/training/`
 - **Reference-only evaluation**: `src/evaluation/`
@@ -20,14 +20,14 @@ Commands (run from repo root):
 
 ```bash
 # Step 1 (MUST): Deploy the Modal app (do this once, or whenever you change the service code)
-uv run python src/main.py deploy
+uv run python src/inference.py deploy
 
 # Step 2 (choose one): Call the service directly OR use the agent (agent calls the same service)
-uv run python src/main.py price "raw text here"
-uv run python src/main.py agent "raw text here"
+uv run python src/inference.py price "raw text here"
+uv run python src/inference.py agent "raw text here"
 
 # Optional: watch the remote Modal logs (this is where container print() output shows up)
-uv run python src/main.py logs
+uv run python src/inference.py logs
 ```
 
 Optional: set a different default preprocess model:
@@ -41,7 +41,7 @@ Notes:
 ## Repo structure (quick guide)
 
 - **`src/inference/`**: all runtime inference/service code (Modal service, agent wrapper, preprocessing)
-- **`src/main.py`**: CLI entrypoint; kept at `src/` so commands stay the same
+- **`src/inference.py`**: CLI entrypoint; kept at `src/` so commands stay the same
 - **`src/training/`**: reference-only scripts explaining LoRA/QLoRA training (not intended to run locally on Mac)
 - **`src/evaluation/`**: reference-only scripts showing baseline evaluation (base model, no LoRA)
 

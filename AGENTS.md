@@ -14,7 +14,7 @@ ai-fine-tuning/
 ├── pyproject.toml                    # Dependencies (managed by uv)
 ├── uv.lock
 └── src/
-    ├── main.py                       # CLI entrypoint (deploy / price / agent / logs)
+    ├── inference.py                  # CLI entrypoint (deploy / price / agent / logs)
     ├── inference/
     │   ├── pricing_service.py        # Modal app + Pricer.price(...) (inference/serving)
     │   ├── preprocessor.py           # LLM-based input structuring (Groq via LiteLLM)
@@ -35,7 +35,7 @@ Notes:
 
 ### Key components (where to start reading)
 
-- **Entrypoint (CLI)**: `src/main.py`
+- **Entrypoint (CLI)**: `src/inference.py`
   - `deploy`: deploys the Modal app defined in `src/inference/pricing_service.py`
   - `price`: calls the deployed `Pricer.price(...)` directly
   - `agent`: calls the same remote method via `SpecialistAgent` (adds logging)
@@ -61,16 +61,16 @@ Run from repo root (recommended via `uv`):
 uv sync
 
 # Deploy the Modal service (must do once, or after changing service code)
-uv run python src/main.py deploy
+uv run python src/inference.py deploy
 
 # Call the service (auto-preprocesses raw text first)
-uv run python src/main.py price "iphone 10"
+uv run python src/inference.py price "iphone 10"
 
 # Same remote call, via the agent wrapper (adds logs)
-uv run python src/main.py agent "iphone 10"
+uv run python src/inference.py agent "iphone 10"
 
 # Stream remote container logs (print() from the Modal container)
-uv run python src/main.py logs
+uv run python src/inference.py logs
 ```
 
 ---

@@ -21,16 +21,16 @@ From repo root:
 
 ```bash
 # Deploy the service to Modal
-uv run python src/main.py deploy
+uv run python src/inference.py deploy
 
 # Call the service (auto-preprocesses input using Groq first)
-uv run python src/main.py price "iphone 10"
+uv run python src/inference.py price "iphone 10"
 
 # Or call via the agent wrapper (also auto-preprocesses first)
-uv run python src/main.py agent "iphone 10"
+uv run python src/inference.py agent "iphone 10"
 
 # View remote container logs (this is where `print()` from the service shows up)
-uv run python src/main.py logs
+uv run python src/inference.py logs
 ```
 
 ### FYI: why `price` and `agent` can differ (and how they differ)
@@ -42,7 +42,7 @@ Both commands ultimately call the **same deployed Modal service method**:
 
 So why might you see different answers (e.g. `299` vs `350`) for the “same” query like `"iphone 10"`?
 
-- **Both commands run `preprocess_if_needed()` first** (in `src/main.py`).
+- **Both commands run `preprocess_if_needed()` first** (in `src/inference.py`).
 - For raw inputs (like `"iphone 10"`) that *aren’t already structured*, `preprocess_if_needed()` calls `Preprocessor().preprocess(...)` (in `src/inference/preprocessor.py`).
 - The preprocessor uses **LiteLLM** to call a **Groq-hosted LLM** (default model: `groq/openai/gpt-oss-20b`) to rewrite your raw text into a structured format (Title/Category/Brand/Description/Details).
 - If the preprocessing output changes between runs, the **final prompt sent to the fine-tuned model changes**, so the predicted price can change too.
@@ -66,8 +66,8 @@ In other words: **`agent` is a wrapper around the same remote call**; it doesn�
 Example “structured input” (preprocessor skips when it sees enough structured fields):
 
 ```bash
-uv run python src/main.py price $'Title: iPhone X\nCategory: Electronics\nBrand: Apple\nDescription: Smartphone\nDetails: 64GB'
-uv run python src/main.py agent $'Title: iPhone X\nCategory: Electronics\nBrand: Apple\nDescription: Smartphone\nDetails: 64GB'
+uv run python src/inference.py price $'Title: iPhone X\nCategory: Electronics\nBrand: Apple\nDescription: Smartphone\nDetails: 64GB'
+uv run python src/inference.py agent $'Title: iPhone X\nCategory: Electronics\nBrand: Apple\nDescription: Smartphone\nDetails: 64GB'
 ```
 
 ### Required secrets / environment

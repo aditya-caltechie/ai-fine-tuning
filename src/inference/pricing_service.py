@@ -8,12 +8,12 @@ High-level flow:
    - Fine-tuned LoRA adapter weights (PEFT) and apply them on top of the base model
    - Tokenizer (needed to convert prompt text -> token IDs, and tokens -> text)
 3) Expose a remote method `Pricer.price(description)` used by:
-   - `src/main.py price "..."`
+   - `src/inference.py price "..."`
    - `src/inference/specialist_agent.py` (agent wrapper)
 
 Notes:
 - `print()` statements here run on the Modal container. View them with:
-  `uv run python src/main.py logs`
+  `uv run python src/inference.py logs`
 """
 
 import modal
@@ -123,7 +123,7 @@ class Pricer:
         prompt = f"{QUESTION}\n\n{description}\n\n{PREFIX}"
 
         # These run on the Modal container. If you want to see them locally:
-        # `uv run python src/main.py logs`
+        # `uv run python src/inference.py logs`
         print("prompt:", prompt, flush=True)
         print("Querying the fine-tuned model", flush=True)
 
