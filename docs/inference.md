@@ -11,59 +11,48 @@ This doc is a walkthrough of the **end-to-end inference path** in this repo:
 
 ```mermaid
 flowchart LR
-  %% -------------------------------
-  %% Local machine (your laptop)
-  %% -------------------------------
   subgraph Local[Local machine]
-    CLI[src/inference.py\nCLI: deploy | price | agent | logs]
-    PRE[src/inference/preprocessor.py\nPreprocessor (LiteLLM)]
-    AG[src/inference/specialist_agent.py\nSpecialistAgent (logging wrapper)]
+    CLI["src/inference.py<br/>CLI: deploy | price | agent | logs"]
+    PRE["src/inference/preprocessor.py<br/>Preprocessor (LiteLLM)"]
+    AG["src/inference/specialist_agent.py<br/>SpecialistAgent (logging wrapper)"]
   end
 
-  %% -------------------------------
-  %% External preprocessing LLM (called from local)
-  %% -------------------------------
   subgraph LLM[External LLM provider]
-    GROQ[Groq (default)\nModel: PRICER_PREPROCESSOR_MODEL\nAPI key: GROQ_API_KEY]
+    GROQ["Groq (default)<br/>Model: PRICER_PREPROCESSOR_MODEL<br/>Auth: GROQ_API_KEY"]
   end
 
-  %% -------------------------------
-  %% Modal (control plane + container runtime)
-  %% -------------------------------
   subgraph Modal[Modal cloud]
-    CP[Modal control plane\n(app deploy, logs, RPC routing)]
-    subgraph C[GPU container (deployed app: pricer-service)]
-      PS[src/inference/pricing_service.py\nPricer.setup() + Pricer.price()]
-      TOK[Tokenizer]
-      BASE[Base model (4-bit quantized)]
-      LORA[LoRA/PEFT adapter weights]
-      PS --> TOK
-      PS --> BASE
-      PS --> LORA
-    end
-    VOL[Modal Volume\nHF cache (/cache)]
-    SEC[Modal Secret\nhuggingface-secret (HF_TOKEN)]
-    VOL --> C
-    SEC --> C
+    CP["Modal control plane<br/>(deploy, logs, RPC routing)"]
+    CONTAINER["GPU container<br/>(deployed app: pricer-service)"]
+
+    PS["src/inference/pricing_service.py<br/>Pricer.setup() + Pricer.price()"]
+    TOK[Tokenizer]
+    BASE["Base model<br/>(4-bit quantized)"]
+    LORA["LoRA/PEFT<br/>adapter weights"]
+
+    VOL["Modal Volume<br/>HF cache (/cache)"]
+    SEC["Modal Secret<br/>huggingface-secret (HF_TOKEN)"]
+
+    CP --> CONTAINER
+    VOL --> CONTAINER
+    SEC --> CONTAINER
+
+    CONTAINER --> PS
+    PS --> TOK
+    PS --> BASE
+    PS --> LORA
   end
 
-  %% -------------------------------
-  %% Hugging Face model hosting
-  %% -------------------------------
   subgraph HF[Hugging Face Hub]
-    HUB[Model artifacts:\n- BASE_MODEL\n- FINETUNED_MODEL adapters]
+    HUB["Model artifacts<br/>BASE_MODEL + FINETUNED_MODEL adapters"]
   end
 
-  %% -------------------------------
-  %% Relationships
-  %% -------------------------------
-  CLI -->|price/agent raw text| PRE
-  PRE -->|completion()| GROQ
-  CLI -->|deploy/logs| CP
-  CLI -->|Modal SDK RPC: Pricer.price.remote(...)| CP
-  AG -->|Modal SDK RPC: Pricer.price.remote(...)| CP
-  CP --> C
-  C -->|download on cold start\n(then cached)| HUB
+  CLI -->|"price/agent raw text"| PRE
+  PRE -->|"completion()"| GROQ
+  CLI -->|"deploy/logs"| CP
+  CLI -->|"Modal SDK RPC<br/>Pricer.price.remote(...)"| CP
+  AG -->|"Modal SDK RPC<br/>Pricer.price.remote(...)"| CP
+  CONTAINER -->|"download on cold start<br/>(then cached)"| HUB
 ```
 
 ## Big picture (what happens when you run a command)
