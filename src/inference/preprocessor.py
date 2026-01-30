@@ -47,3 +47,4 @@ class Preprocessor:
         self.total_output_tokens += response.usage.completion_tokens
         self.total_cost += response._hidden_params["response_cost"]
         return response.choices[0].message.content
+

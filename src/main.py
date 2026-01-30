@@ -29,7 +29,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 
 SRC_DIR = Path(__file__).resolve().parent
-SERVICE_MODULE = "pricing_service"  # file: src/pricing_service.py
+SERVICE_MODULE = "inference.pricing_service"  # file: src/inference/pricing_service.py
 APP_NAME = "pricer-service"  # modal.App("pricer-service")
 
 USAGE = """\
@@ -61,7 +61,7 @@ def preprocess_if_needed(text: str) -> str | None:
     if hits >= 3:
         return text
 
-    from preprocessor import Preprocessor
+    from inference.preprocessor import Preprocessor
 
     try:
         return Preprocessor().preprocess(text)
@@ -104,7 +104,7 @@ def cmd_price(text: str) -> int:
 
 
 def cmd_agent(text: str) -> int:
-    from specialist_agent import SpecialistAgent
+    from inference.specialist_agent import SpecialistAgent
 
     processed = preprocess_if_needed(text)
     if processed is None:

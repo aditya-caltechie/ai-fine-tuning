@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import modal
 
-from agent import Agent
+from .agent import Agent
 
 
 class SpecialistAgent(Agent):
     """
-    Calls the deployed Modal class `Pricer` from `pricer_service2.py`.
+    Thin wrapper around the deployed Modal class `Pricer`.
     """
 
     name = "Specialist Agent"
@@ -25,3 +25,4 @@ class SpecialistAgent(Agent):
             result = self.pricer.price.remote(description)
         self.log(f"Specialist Agent completed - predicting ${result:.2f}")
         return float(result)
+

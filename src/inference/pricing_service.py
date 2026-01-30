@@ -9,7 +9,7 @@ High-level flow:
    - Tokenizer (needed to convert prompt text -> token IDs, and tokens -> text)
 3) Expose a remote method `Pricer.price(description)` used by:
    - `src/main.py price "..."`
-   - `src/specialist_agent.py` (agent wrapper)
+   - `src/inference/specialist_agent.py` (agent wrapper)
 
 Notes:
 - `print()` statements here run on the Modal container. View them with:
@@ -135,3 +135,4 @@ class Pricer:
         contents = contents.replace(",", "")
         match = re.search(r"[-+]?\d*\.\d+|\d+", contents)
         return float(match.group()) if match else 0
+

@@ -1,6 +1,6 @@
 ## Pricing service overview
 
-`src/pricing_service.py` defines a **Modal-deployed** pricing service (Modal app name: `pricer-service`).
+`src/inference/pricing_service.py` defines a **Modal-deployed** pricing service (Modal app name: `pricer-service`).
 
 ### What it does (high level)
 
@@ -38,23 +38,23 @@ uv run python src/main.py logs
 Both commands ultimately call the **same deployed Modal service method**:
 
 - **Service**: Modal app `pricer-service`
-- **Class/method**: `Pricer.price(...)` (defined in `src/pricing_service.py`)
+- **Class/method**: `Pricer.price(...)` (defined in `src/inference/pricing_service.py`)
 
 So why might you see different answers (e.g. `299` vs `350`) for the “same” query like `"iphone 10"`?
 
 - **Both commands run `preprocess_if_needed()` first** (in `src/main.py`).
-- For raw inputs (like `"iphone 10"`) that *aren’t already structured*, `preprocess_if_needed()` calls `Preprocessor().preprocess(...)` (in `src/preprocessor.py`).
+- For raw inputs (like `"iphone 10"`) that *aren’t already structured*, `preprocess_if_needed()` calls `Preprocessor().preprocess(...)` (in `src/inference/preprocessor.py`).
 - The preprocessor uses **LiteLLM** to call a **Groq-hosted LLM** (default model: `groq/openai/gpt-oss-20b`) to rewrite your raw text into a structured format (Title/Category/Brand/Description/Details).
 - If the preprocessing output changes between runs, the **final prompt sent to the fine-tuned model changes**, so the predicted price can change too.
 
 Important detail:
 
-- **The fine-tuned model inference is seeded** (`set_seed(42)` in `src/pricing_service.py`). That means **given the same preprocessed text**, pricing should be stable. Variability usually comes from **the preprocessing step**.
+- **The fine-tuned model inference is seeded** (`set_seed(42)` in `src/inference/pricing_service.py`). That means **given the same preprocessed text**, pricing should be stable. Variability usually comes from **the preprocessing step**.
 
 #### How `price` differs from `agent`
 
 - **`price`**: directly instantiates the deployed Modal class and calls `Pricer.price.remote(processed_text)`.
-- **`agent`**: instantiates `SpecialistAgent` (in `src/specialist_agent.py`), which is a thin wrapper that *also* calls `Pricer.price.remote(processed_text)` and adds logging.
+- **`agent`**: instantiates `SpecialistAgent` (in `src/inference/specialist_agent.py`), which is a thin wrapper that *also* calls `Pricer.price.remote(processed_text)` and adds logging.
 
 In other words: **`agent` is a wrapper around the same remote call**; it doesn’t use a different pricing model.
 
@@ -73,5 +73,5 @@ uv run python src/main.py agent $'Title: iPhone X\nCategory: Electronics\nBrand:
 ### Required secrets / environment
 
 - **Modal secret**: `huggingface-secret` with key `HF_TOKEN` (so Modal can download models from Hugging Face)
-- **Local `.env`**: `GROQ_API_KEY=...` (used by `src/preprocessor.py` before calling Modal)
+- **Local `.env`**: `GROQ_API_KEY=...` (used by `src/inference/preprocessor.py` before calling Modal)
 

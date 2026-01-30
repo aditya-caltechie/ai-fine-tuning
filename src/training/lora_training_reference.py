@@ -235,6 +235,7 @@ def train_model(model, train_dataset, eval_dataset, lora_cfg, sft_cfg):
     trainer.train()
     return trainer
 
+
 def push_to_hub(trainer, project_run_name: str) -> None:
     """Push the trained (adapter) weights to Hugging Face Hub."""
     trainer.model.push_to_hub(project_run_name, private=True)
@@ -271,11 +272,11 @@ def main() -> None:
 
     # 5) Train adapters
     trainer = train_model(
-        model=base_model,    # quantized base model
-        train_dataset=train, # training dataset
-        eval_dataset=val,    # validation dataset
-        lora_cfg=lora_cfg,   # LoRA adapters to train
-        sft_cfg=sft_cfg,     # training hyperparameters
+        model=base_model,  # quantized base model
+        train_dataset=train,  # training dataset
+        eval_dataset=val,  # validation dataset
+        lora_cfg=lora_cfg,  # LoRA adapters to train
+        sft_cfg=sft_cfg,  # training hyperparameters
     )
 
     # 6) Push trained adapters to Hugging Face
