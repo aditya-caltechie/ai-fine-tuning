@@ -9,15 +9,22 @@ Prereqs:
 - `.env` contains your Groq key:
   - `GROQ_API_KEY=...`
 
+Service files:
+- **Modal service**: `src/pricing_service.py` (deployed app name: `pricer-service`)
+- **Client runner**: `src/main.py`
+
 Commands (run from repo root):
 
 ```bash
 # Step 1 (MUST): Deploy the Modal app (do this once, or whenever you change the service code)
-uv run python src/main.py deploy pricer_service2
+uv run python src/main.py deploy
 
 # Step 2 (choose one): Call the service directly OR use the agent (agent calls the same service)
 uv run python src/main.py price "raw text here"
 uv run python src/main.py agent "raw text here"
+
+# Optional: watch the remote Modal logs (this is where container print() output shows up)
+uv run python src/main.py logs
 ```
 
 Optional: set a different default preprocess model:
