@@ -10,26 +10,29 @@ This document is a **contributor-oriented map** of this repo: where things live,
 ai-fine-tuning/
 ├── README.md
 ├── docs/
-│   └── README.md                     # Deeper notes about the Modal pricing service
+│   ├── README.md                     # Deeper notes about the Modal pricing service
+│   ├── inference.md                  # Inference workflow + diagrams
+│   └── fine_tuning.md                # Fine-tuning notes + diagrams
 ├── pyproject.toml                    # Dependencies (managed by uv)
 ├── uv.lock
-└── src/
-    ├── inference.py                  # CLI entrypoint (deploy / price / agent / logs)
-    ├── inference/
-    │   ├── pricing_service.py        # Modal app + Pricer.price(...) (inference/serving)
-    │   ├── preprocessor.py           # LLM-based input structuring (Groq via LiteLLM)
-    │   ├── specialist_agent.py       # Thin wrapper around Pricer.price.remote(...)
-    │   └── agent.py                  # Minimal logging base class
-    ├── evaluation/
-    │   └── base_model_evaluation.py  # Reference-only: baseline eval (no LoRA)
-    └── training/
-        └── lora_training_reference.py # Reference-only: LoRA/QLoRA training walkthrough
+├── src/
+│   ├── inference.py                  # CLI entrypoint (deploy / price)
+│   ├── inference/
+│   │   ├── pricing_service.py        # Modal app + Pricer.price(...) (inference/serving)
+│   │   ├── preprocessor.py           # LLM-based input structuring (Groq via LiteLLM)
+│   │   └── logger.py                 # Minimal logger used by the CLI
+│   ├── fine_tuning/
+│   │   └── notebooks/                # QLoRA/LoRA notebooks + reference scripts
+│   └── training/                     # Reference-only training notes
+└── tests/
+    ├── test_inference_cli.py         # CLI + preprocess unit tests
+    └── compare_prices.py             # Compare HF dataset vs CLI `price` output
 ```
 
 Notes:
 
 - This repo runs as **scripts under `src/`**, not as a published Python package.
-- `src/training/` and `src/evaluation/` are **reference-only** (kept for learning / documentation).
+- `src/training/` and `src/fine_tuning/` are primarily **reference / learning** material.
 
 ---
 
@@ -37,9 +40,7 @@ Notes:
 
 - **Entrypoint (CLI)**: `src/inference.py`
   - `deploy`: deploys the Modal app defined in `src/inference/pricing_service.py`
-  - `price`: calls the deployed `Pricer.price(...)` directly
-  - `agent`: calls the same remote method via `SpecialistAgent` (adds logging)
-  - `logs`: streams Modal container logs
+  - `price`: calls the deployed `Pricer.price(...)` directly (after preprocessing if needed)
 
 - **Inference/service (Modal)**: `src/inference/pricing_service.py`
   - Loads tokenizer + quantized base model + LoRA adapter weights on container start
@@ -66,11 +67,11 @@ uv run python src/inference.py deploy
 # Call the service (auto-preprocesses raw text first)
 uv run python src/inference.py price "iphone 10"
 
-# Same remote call, via the agent wrapper (adds logs)
-uv run python src/inference.py agent "iphone 10"
-
 # Stream remote container logs (print() from the Modal container)
-uv run python src/inference.py logs
+uv run modal app logs pricer-service --timestamps
+
+# Compare dataset ground-truth vs model output (defaults to 5 test rows)
+uv run python tests/compare_prices.py
 ```
 
 ---

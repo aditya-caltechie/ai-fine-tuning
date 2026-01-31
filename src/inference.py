@@ -7,12 +7,8 @@ Run from repo root:
 Step 1 (MUST): deploy the Modal service
   uv run python src/inference.py deploy
 
-Step 2 (choose one): call the service directly OR use the agent (agent calls same service)
+Step 2: call the service directly 
   uv run python src/inference.py price "raw text here"
-  uv run python src/inference.py agent "raw text here"
-
-Optional: stream remote logs (where container print() shows up)
-  uv run python src/inference.py logs
 """
 
 from __future__ import annotations
@@ -38,7 +34,7 @@ Usage (run from repo root):
   Step 1 (MUST):
     uv run python src/inference.py deploy
 
-  Step 2 (choose one):
+  Step 2:
     uv run python src/inference.py price "<raw text>"
 """
 
