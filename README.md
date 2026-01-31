@@ -55,7 +55,7 @@ Service files:
 - **Client runner**: `src/inference.py`
 - **Inference helpers**: `src/inference/` (agent wrapper + preprocessor)
 - **Reference-only training**: `src/training/`
-- **Reference-only evaluation**: `src/evaluation/`
+- **Fine-tuning**: `src/fine_tuning/`
 
 Commands (run from repo root):
 
