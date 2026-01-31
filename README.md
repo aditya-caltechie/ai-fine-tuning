@@ -63,12 +63,8 @@ Commands (run from repo root):
 # Step 1 (MUST): Deploy the Modal app (do this once, or whenever you change the service code)
 uv run python src/inference.py deploy
 
-# Step 2 (choose one): Call the service directly OR use the agent (agent calls the same service)
+# Step 2: Call the service (raw input is auto-preprocessed first)
 uv run python src/inference.py price "iphone 10"
-uv run python src/inference.py agent "iphone 10"
-
-# Optional: watch the remote Modal logs (this is where container print() output shows up)
-uv run python src/inference.py logs
 ```
 
 Optional: set a different default preprocess model:
@@ -79,31 +75,36 @@ Notes:
 - To make repeated runs stable for the same raw input, the preprocessor uses best-effort deterministic settings and a small on-disk cache at `.cache/pricer_preprocess_cache.json`.
   - You can control this with env vars like `PRICER_PREPROCESSOR_TEMPERATURE`, `PRICER_PREPROCESSOR_SEED`, `PRICER_PREPROCESSOR_CACHE`.
 
-## Compare dataset prices vs agent output (optional)
+## Compare dataset prices vs model output (optional)
 
-This repo includes a small script that loads **N items from the HF dataset**, extracts each row’s `Title` and ground-truth `Price is $...`, then calls the deployed service via:
+This repo includes an integration script that loads **N items from the HF dataset**, extracts each row’s `Title` and ground-truth `Price is $...`, then calls the deployed service via:
 
-- `uv run python src/inference.py agent "<Title>"`
+- `uv run python src/inference.py price "<Title>"`
 
 Run (from repo root):
 
 ```bash
-# Compare 20 test items (default)
-uv run python src/compare_dataset_agent_prices.py
-
-# Compare 5 test items
-uv run python src/compare_dataset_agent_prices.py --n 5 --split test
-
 # Override dataset (or set PRICER_DATASET_NAME env var)
-uv run python src/compare_dataset_agent_prices.py --dataset ed-donner/items_prompts_full --n 5 --split test
+uv run python tests/integration/compare_prices.py --dataset ed-donner/items_prompts_full --n 5 --split test
 ```
 
-### Optional integration test (skipped by default)
+## Tests
 
-There is also a smoke test that runs the script, but it is **skipped unless enabled** (it requires network + a deployed Modal app):
+Tests are organized as:
+
+- **Unit tests**: `tests/unit/` (run in CI)
+- **Integration tests**: `tests/integration/` (skipped by default; require network + deployed Modal app)
+
+Run unit tests:
 
 ```bash
-RUN_DATASET_AGENT_COMPARE=1 uv run python -m unittest test.test_compare_dataset_agent_prices
+uv run python -m unittest discover -s tests -p "test_*.py"
+```
+
+Enable and run integration tests:
+
+```bash
+RUN_INTEGRATION_TESTS=1 uv run python -m unittest discover -s tests -p "test_*.py"
 ```
 
 ## Repo structure (quick guide)

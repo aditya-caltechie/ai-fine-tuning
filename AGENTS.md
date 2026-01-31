@@ -25,8 +25,15 @@ ai-fine-tuning/
 │   │   └── notebooks/                # QLoRA/LoRA notebooks + reference scripts
 │   └── training/                     # Reference-only training notes
 └── tests/
-    ├── test_inference_cli.py         # CLI + preprocess unit tests
-    └── compare_prices.py             # Compare HF dataset vs CLI `price` output
+    ├── __init__.py                   # Makes `tests/` a package (enables unittest discovery)
+    ├── unit/
+    │   ├── __init__.py
+    │   ├── test_inference_cli.py     # CLI + preprocess unit tests
+    │   └── test_compare_prices_parsing.py
+    └── integration/
+        ├── __init__.py
+        ├── compare_prices.py         # Script: compare HF dataset vs CLI `price` output
+        └── test_compare_prices_integration.py  # Skipped unless RUN_INTEGRATION_TESTS=1
 ```
 
 Notes:
@@ -70,8 +77,14 @@ uv run python src/inference.py price "iphone 10"
 # Stream remote container logs (print() from the Modal container)
 uv run modal app logs pricer-service --timestamps
 
+# Run unit tests (CI runs this)
+uv run python -m unittest discover -s tests -p "test_*.py"
+
 # Compare dataset ground-truth vs model output (defaults to 5 test rows)
-uv run python tests/compare_prices.py
+uv run python tests/integration/compare_prices.py
+
+# Run integration tests (skipped by default; requires network + deployed Modal app)
+RUN_INTEGRATION_TESTS=1 uv run python -m unittest discover -s tests -p "test_*.py"
 ```
 
 ---
