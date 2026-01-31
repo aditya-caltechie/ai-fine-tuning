@@ -64,8 +64,8 @@ Commands (run from repo root):
 uv run python src/inference.py deploy
 
 # Step 2 (choose one): Call the service directly OR use the agent (agent calls the same service)
-uv run python src/inference.py price "raw text here"
-uv run python src/inference.py agent "raw text here"
+uv run python src/inference.py price "iphone 10"
+uv run python src/inference.py agent "iphone 10"
 
 # Optional: watch the remote Modal logs (this is where container print() output shows up)
 uv run python src/inference.py logs
