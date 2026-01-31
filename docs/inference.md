@@ -59,24 +59,29 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  U["User runs<br/>uv run python src/inference.py COMMAND ..."] --> M["main() in src/inference.py"]
-  M -->|deploy| D["cmd_deploy()<br/>modal deploy -m inference.pricing_service"]
-  M -->|logs| L["cmd_logs()<br/>modal app logs pricer-service --timestamps"]
-  M -->|"price ""text"""| P["cmd_price(text)"]
-  M -->|"agent ""text"""| A["cmd_agent(text)"]
+  U[User runs: uv run python src/inference.py COMMAND] --> M[main() in src/inference.py]
 
-  P --> PRE2["preprocess_if_needed(text)"]
+  M -->|deploy| D[cmd_deploy()]
+  D --> D2[uv run modal deploy -m inference.pricing_service]
+
+  M -->|logs| L[cmd_logs()]
+  L --> L2[uv run modal app logs pricer-service --timestamps]
+
+  M -->|price| P[cmd_price(text)]
+  M -->|agent| A[cmd_agent(text)]
+
+  P --> PRE2[preprocess_if_needed(text)]
   A --> PRE2
 
-  PRE2 -->|already structured| ST["use text as-is"]
-  PRE2 -->|raw text| PR2["Preprocessor().preprocess(text)"]
+  PRE2 -->|already structured| ST[use text as-is]
+  PRE2 -->|raw text| PR2[Preprocessor.preprocess(text)]
   PR2 --> ST
 
-  ST --> RPC1["Modal SDK RPC<br/>Pricer.price.remote(structured_text)"]
-  RPC1 --> SVC["Modal container<br/>Pricer.price(description)"]
-  SVC --> OUT["float price printed locally"]
+  ST --> RPC1[Modal RPC: Pricer.price.remote(structured_text)]
+  RPC1 --> SVC[Modal container: Pricer.price(description)]
+  SVC --> OUT[float printed locally]
 
-  A --> RPC2["SpecialistAgent.price()<br/>Pricer.price.remote(structured_text)"]
+  A --> RPC2[SpecialistAgent.price calls Pricer.price.remote]
   RPC2 --> SVC
 ```
 
