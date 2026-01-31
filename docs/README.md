@@ -26,23 +26,20 @@ uv run python src/inference.py deploy
 # Call the service (auto-preprocesses input using Groq first)
 uv run python src/inference.py price "iphone 10"
 
-# Or call via the agent wrapper (also auto-preprocesses first)
-uv run python src/inference.py agent "iphone 10"
-
 # View remote container logs (this is where `print()` from the service shows up)
-uv run python src/inference.py logs
+uv run modal app logs pricer-service --timestamps
 ```
 
-### FYI: why `price` and `agent` can differ (and how they differ)
+### FYI: why `price` can differ between runs (raw text inputs)
 
-Both commands ultimately call the **same deployed Modal service method**:
+The `price` command ultimately calls the **same deployed Modal service method**:
 
 - **Service**: Modal app `pricer-service`
 - **Class/method**: `Pricer.price(...)` (defined in `src/inference/pricing_service.py`)
 
-So why might you see different answers (e.g. `299` vs `350`) for the “same” query like `"iphone 10"`?
+So why might you see different answers (e.g. `299` vs `350`) for the “same” raw query like `"iphone 10"`?
 
-- **Both commands run `preprocess_if_needed()` first** (in `src/inference.py`).
+- `price` runs `preprocess_if_needed()` first (in `src/inference.py`).
 - For raw inputs (like `"iphone 10"`) that *aren’t already structured*, `preprocess_if_needed()` calls `Preprocessor().preprocess(...)` (in `src/inference/preprocessor.py`).
 - The preprocessor uses **LiteLLM** to call a **Groq-hosted LLM** (default model: `groq/openai/gpt-oss-20b`) to rewrite your raw text into a structured format (Title/Category/Brand/Description/Details).
 - If the preprocessing output changes between runs, the **final prompt sent to the fine-tuned model changes**, so the predicted price can change too.
@@ -50,13 +47,6 @@ So why might you see different answers (e.g. `299` vs `350`) for the “same” 
 Important detail:
 
 - **The fine-tuned model inference is seeded** (`set_seed(42)` in `src/inference/pricing_service.py`). That means **given the same preprocessed text**, pricing should be stable. Variability usually comes from **the preprocessing step**.
-
-#### How `price` differs from `agent`
-
-- **`price`**: directly instantiates the deployed Modal class and calls `Pricer.price.remote(processed_text)`.
-- **`agent`**: instantiates `SpecialistAgent` (in `src/inference/specialist_agent.py`), which is a thin wrapper that *also* calls `Pricer.price.remote(processed_text)` and adds logging.
-
-In other words: **`agent` is a wrapper around the same remote call**; it doesn’t use a different pricing model.
 
 #### Determinism guidance (recommended use cases)
 
@@ -67,7 +57,6 @@ Example “structured input” (preprocessor skips when it sees enough structure
 
 ```bash
 uv run python src/inference.py price $'Title: iPhone X\nCategory: Electronics\nBrand: Apple\nDescription: Smartphone\nDetails: 64GB'
-uv run python src/inference.py agent $'Title: iPhone X\nCategory: Electronics\nBrand: Apple\nDescription: Smartphone\nDetails: 64GB'
 ```
 
 ### Required secrets / environment

@@ -5,16 +5,14 @@ This doc is a walkthrough of the **end-to-end inference path** in this repo:
 - **CLI entrypoint**: `src/inference.py`
 - **Modal service**: `src/inference/pricing_service.py` (Modal app name: `pricer-service`)
 - **Preprocessing** (optional): `src/inference/preprocessor.py` (LiteLLM → default Groq model)
-- **Agent wrapper** (optional): `src/inference/specialist_agent.py`
 
 ## Overall architecture (components + where they run)
 
 ```mermaid
 flowchart LR
   subgraph Local[Local machine]
-    CLI["src/inference.py<br/>CLI: deploy | price | agent | logs"]
+    CLI["src/inference.py<br/>CLI: deploy | price"]
     PRE["src/inference/preprocessor.py<br/>Preprocessor (LiteLLM)"]
-    AG["src/inference/specialist_agent.py<br/>SpecialistAgent (logging wrapper)"]
   end
 
   subgraph LLM[External LLM provider]
@@ -47,11 +45,10 @@ flowchart LR
     HUB["Model artifacts<br/>BASE_MODEL + FINETUNED_MODEL adapters"]
   end
 
-  CLI -->|"price/agent raw text"| PRE
+  CLI -->|"price raw text"| PRE
   PRE -->|"completion()"| GROQ
-  CLI -->|"deploy/logs"| CP
+  CLI -->|"deploy"| CP
   CLI -->|"Modal SDK RPC<br/>Pricer.price.remote(...)"| CP
-  AG -->|"Modal SDK RPC<br/>Pricer.price.remote(...)"| CP
   CONTAINER -->|"download on cold start<br/>(then cached)"| HUB
 ```
 
@@ -64,14 +61,9 @@ flowchart TD
   M -->|deploy| D["cmd_deploy()"]
   D --> D2["uv run modal deploy -m inference.pricing_service"]
 
-  M -->|logs| L["cmd_logs()"]
-  L --> L2["uv run modal app logs pricer-service --timestamps"]
-
   M -->|price| P["cmd_price(text)"]
-  M -->|agent| A["cmd_agent(text)"]
 
   P --> PRE2["preprocess_if_needed(text)"]
-  A --> PRE2
 
   PRE2 -->|already structured| ST["use text as-is"]
   PRE2 -->|raw text| PR2["Preprocessor.preprocess(text)"]
@@ -80,19 +72,18 @@ flowchart TD
   ST --> RPC1["Modal RPC: Pricer.price.remote(structured_text)"]
   RPC1 --> SVC["Modal container: Pricer.price(description)"]
   SVC --> OUT["float printed locally"]
-
-  A --> RPC2["SpecialistAgent.price calls Pricer.price.remote"]
-  RPC2 --> SVC
 ```
 
 ## CLI command dispatch (the surface API)
 
-`src/inference.py` provides four commands via `main()`:
+`src/inference.py` provides two commands via `main()`:
 
 - **`deploy`**: deploy the Modal service module `inference.pricing_service`
 - **`price "<text>"`**: preprocess (if needed) and call the deployed service directly
-- **`agent "<text>"`**: preprocess (if needed) and call the deployed service via `SpecialistAgent` (adds logs)
-- **`logs`**: stream the Modal app logs for `pricer-service` (where container `print()` output goes)
+
+To stream remote container logs (where service `print()` output appears), run:
+
+- `uv run modal app logs pricer-service --timestamps`
 
 ## Walkthrough: `deploy`
 
@@ -163,44 +154,9 @@ The deployed model inference is seeded (`set_seed(42)` in `Pricer.price`), so **
 
 If you pass raw text, the **preprocessor is an LLM call**, and changes in its output will change the prompt sent to the fine-tuned model, which can change the predicted price.
 
-## Walkthrough: `agent "<text>"`
-
-When you run:
-
-```bash
-uv run python src/inference.py agent "iphone 10"
-```
-
-the flow is:
-
-1) `cmd_agent(text)` calls `preprocess_if_needed(text)` (same logic as `price`)
-2) It creates `SpecialistAgent()` and calls `agent.price(processed)`
-3) `SpecialistAgent.price()` calls the same deployed Modal method: `Pricer.price.remote(description)`
-
-The difference vs `price` is **only** that the agent wrapper adds lightweight logging (via `src/inference/agent.py`).
-
-## Walkthrough: `logs`
-
-When you run:
-
-```bash
-uv run python src/inference.py logs
-```
-
-`cmd_logs()` executes:
-
-- `uv run modal app logs pricer-service --timestamps`
-
-This is the best way to see **container-side `print()` output**, such as:
-
-- `prompt: ...`
-- `Querying the fine-tuned model`
-
-Those `print()` calls happen inside `Pricer.price()` on the Modal container.
-
 ## What the Modal service does per request (`Pricer.price`)
 
-Once `cmd_price` / `SpecialistAgent` reaches the deployed service, `Pricer.price(description)`:
+Once `cmd_price` reaches the deployed service, `Pricer.price(description)`:
 
 ```mermaid
 sequenceDiagram
