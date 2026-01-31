@@ -63,6 +63,9 @@ hf_cache_volume = Volume.from_name("hf-hub-cache", create_if_missing=True)
 class Pricer:
     @modal.enter()
     def setup(self):
+        # Run this method automatically when the Modal container starts and the class 
+        # is being initialized in that container.
+        #
         # -------------------------------------------------------------------
         # STEP 2) Load model + tokenizer once per container
         # -------------------------------------------------------------------
