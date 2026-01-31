@@ -40,10 +40,6 @@ Usage (run from repo root):
 
   Step 2 (choose one):
     uv run python src/inference.py price "<raw text>"
-    uv run python src/inference.py agent "<raw text>"
-
-  Optional:
-    uv run python src/inference.py logs
 """
 
 
@@ -76,15 +72,12 @@ def cmd_deploy() -> int:
     return subprocess.call(cmd, cwd=str(SRC_DIR))
 
 
-def cmd_logs() -> int:
-    cmd = ["uv", "run", "modal", "app", "logs", APP_NAME, "--timestamps"]
-    print(f"Running: {' '.join(cmd)}")
-    return subprocess.call(cmd, cwd=str(SRC_DIR))
-
-
 def cmd_price(text: str) -> int:
     import modal
+    from inference.logger import Logger
 
+    logger = Logger()
+    logger.log("Querying the fine-tuned model")
     processed = preprocess_if_needed(text)
     if processed is None:
         return 1
@@ -95,29 +88,10 @@ def cmd_price(text: str) -> int:
         # Deployed-app logs are best viewed via `logs`, but enable_output can still show some SDK output.
         with modal.enable_output():
             result = pricer.price.remote(processed)
+            logger.log("Result: " + str(result))
     except Exception as e:
         print(f"Pricing failed: {e}")
         return 1
-
-    print(result)
-    return 0
-
-
-def cmd_agent(text: str) -> int:
-    from inference.specialist_agent import SpecialistAgent
-
-    processed = preprocess_if_needed(text)
-    if processed is None:
-        return 1
-
-    try:
-        agent = SpecialistAgent()
-        result = agent.price(processed)
-    except Exception as e:
-        print(f"Agent call failed: {e}")
-        return 1
-
-    print(result)
     return 0
 
 
@@ -141,18 +115,11 @@ def main() -> int:
 
     if cmd == "deploy":
         return cmd_deploy()
-    if cmd == "logs":
-        return cmd_logs()
     if cmd == "price":
         if len(argv) < 2:
             print(USAGE)
             return 2
         return cmd_price(argv[1])
-    if cmd == "agent":
-        if len(argv) < 2:
-            print(USAGE)
-            return 2
-        return cmd_agent(argv[1])
 
     print(f"Unknown command: {cmd}\n")
     print(USAGE)

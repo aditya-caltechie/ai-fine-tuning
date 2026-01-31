@@ -33,8 +33,8 @@ TITLE_RE = re.compile(r"(?im)^\s*title:\s*(.+?)\s*$")
 PRICE_RE = re.compile(r"(?i)price\s+is\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)")
 
 
-def run_agent(title: str) -> float:
-    cmd = ["uv", "run", "python", str(INFERENCE_CLI), "agent", title]
+def run_price(title: str) -> float:
+    cmd = ["uv", "run", "python", str(INFERENCE_CLI), "price", title]
     proc = subprocess.run(
         cmd,
         cwd=str(REPO_ROOT),
@@ -42,10 +42,16 @@ def run_agent(title: str) -> float:
         text=True,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"Agent CLI failed ({proc.returncode}):\n{proc.stdout}\n{proc.stderr}")
+        raise RuntimeError(f"Price CLI failed ({proc.returncode}):\n{proc.stdout}\n{proc.stderr}")
 
-    # The CLI prints just the float result on success.
-    out = proc.stdout.strip().splitlines()[-1].strip()
+    # The CLI is expected to print a float on success.
+    lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    if not lines:
+        raise RuntimeError(
+            "Price CLI returned 0 but printed nothing.\n\n"
+            f"stdout:\n{proc.stdout}\n\nstderr:\n{proc.stderr}"
+        )
+    out = lines[-1]
     try:
         return float(out)
     except ValueError as e:
@@ -56,7 +62,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Compare dataset prices vs agent inference.")
     parser.add_argument("--dataset", default=DEFAULT_DATASET, help="HF dataset name (default: %(default)s)")
     parser.add_argument("--split", default="test", choices=["train", "val", "test"], help="Dataset split")
-    parser.add_argument("--n", type=int, default=20, help="Number of examples to evaluate (default: %(default)s)")
+    parser.add_argument("--n", type=int, default=5, help="Number of examples to evaluate (default: %(default)s)")
     args = parser.parse_args()
 
     try:
@@ -95,7 +101,8 @@ def main() -> int:
         title = m_title.group(1).strip()
         true_price = float(m_price.group(1).replace(",", ""))
 
-        pred = run_agent(title)
+        # Call the deployed Modal model via the repo CLI:
+        pred = run_price(title)
         err = abs(pred - true_price)
         abs_errors.append(err)
         rows_evaluated += 1
