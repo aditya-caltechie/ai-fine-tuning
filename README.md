@@ -65,6 +65,9 @@ uv run python src/inference.py deploy
 
 # Step 2: Call the service (raw input is auto-preprocessed first)
 uv run python src/inference.py price "iphone 10"
+
+# Step 3: Run comparison tests of prices using pricer-service (Optional)
+uv run python tests/integration/compare_prices.py
 ```
 
 Optional: set a different default preprocess model:
@@ -112,12 +115,4 @@ RUN_INTEGRATION_TESTS=1 uv run python -m unittest discover -s tests -p "test_*.p
 - **`src/inference/`**: all runtime inference/service code (Modal service, agent wrapper, preprocessing)
 - **`src/inference.py`**: CLI entrypoint; kept at `src/` so commands stay the same
 - **`src/training/`**: reference-only scripts explaining LoRA/QLoRA training (not intended to run locally on Mac)
-- **`src/evaluation/`**: reference-only scripts showing baseline evaluation (base model, no LoRA)
-
-## Convert a Colab notebook to a commented Python script (optional)
-
-Because Google Drive/Colab links often require sign-in, the simplest workflow is:
-
-- In Colab: **File → Download → Download `.ipynb`**
-- Put the downloaded notebook into this repo (example: `my_notebook.ipynb`)
-- Convert it using your preferred tool (for example, `jupytext`) or a simple notebook-to-script exporter.
+- **`src/fine-tuning/`**: notebooks for fine-tuning (base model, no LoRA)
