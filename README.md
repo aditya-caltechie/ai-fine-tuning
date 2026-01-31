@@ -7,72 +7,37 @@ It deploys a Modal pricing service in src/inference/ and provides a CLI (src/inf
 
 ```mermaid
 flowchart LR
-  %% ---------------------------
-  %% Training (reference-only)
-  %% ---------------------------
-  subgraph Train["Fine-tuning (reference-only)"]
-    TCODE["src/fine_tuning<br/>notebooks + lora_training_reference.py"]
-    TGPU["GPU runtime<br/>Colab or similar"]
-    TGPU --> TCODE
-    TCODE --> ADAPT["LoRA adapter weights<br/>(PEFT)"]
+  subgraph Train["Fine-tuning (reference)"]
+    TCODE["src/fine_tuning<br/>QLoRA/LoRA notebooks + reference script"]
+    ADAPT["LoRA adapter weights<br/>(PEFT)"]
+    TCODE --> ADAPT
   end
 
-  %% ---------------------------
-  %% Hugging Face (model + data)
-  %% ---------------------------
   subgraph HF["Hugging Face Hub"]
-    BASE["Base model<br/>meta-llama/Llama-3.2-3B"]
-    DATA["Dataset<br/>ed-donner/items_prompts_lite or full"]
+    BASE["Base model<br/>Llama-3.2-3B"]
+    DATA["Training dataset<br/>items prompts"]
     ADAPT_HUB["Published adapters<br/>HF_USER/price-RUN_NAME"]
   end
 
-  %% ---------------------------
-  %% Inference + serving
-  %% ---------------------------
   subgraph Local["Local machine"]
-    CLI["CLI<br/>src/inference.py<br/>deploy | price | agent | logs"]
-    PRE["Optional preprocessing<br/>src/inference/preprocessor.py<br/>LiteLLM completion()"]
-    ENV_GROQ[".env<br/>GROQ_API_KEY"]
-    ENV_GROQ --> PRE
+    CLI["CLI<br/>src/inference.py"]
+    PRE["Optional preprocessing<br/>LiteLLM to Groq"]
   end
 
-  subgraph LLM["External LLM provider (preprocess)"]
-    GROQ["Groq (default)<br/>PRICER_PREPROCESSOR_MODEL"]
+  subgraph Modal["Modal (pricer-service)"]
+    SVC["GPU service<br/>src/inference/pricing_service.py"]
   end
 
-  subgraph Modal["Modal cloud"]
-    DEPLOY["Deploy + logs<br/>modal deploy / app logs"]
-    RPC["RPC routing<br/>Pricer.price.remote(...)"]
-    CONTAINER["GPU container<br/>App: pricer-service"]
-    SECRET["Modal Secret<br/>huggingface-secret (HF_TOKEN)"]
-    CACHE["Modal Volume<br/>HF cache (/cache)"]
-    SERVICE["Service code<br/>src/inference/pricing_service.py"]
-    MODEL["Runtime model<br/>base + LoRA adapters"]
-
-    DEPLOY --> CONTAINER
-    RPC --> CONTAINER
-    SECRET --> CONTAINER
-    CACHE --> CONTAINER
-    CONTAINER --> SERVICE
-    SERVICE --> MODEL
-  end
-
-  %% ---------------------------
-  %% Relationships (data/control)
-  %% ---------------------------
-  BASE --> TCODE
   DATA --> TCODE
+  BASE --> TCODE
   ADAPT --> ADAPT_HUB
 
-  CLI -->|"deploy, logs"| DEPLOY
-  CLI -->|"price, agent"| PRE
-  PRE --> GROQ
+  CLI --> PRE
+  CLI --> SVC
+  PRE --> SVC
 
-  CLI -->|"Modal SDK"| RPC
-  PRE -->|"structured input"| RPC
-
-  BASE -->|"download on cold start"| CONTAINER
-  ADAPT_HUB -->|"download on cold start"| CONTAINER
+  BASE --> SVC
+  ADAPT_HUB --> SVC
 ```
 
 ## Run (`src/inference.py`)
