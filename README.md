@@ -3,6 +3,38 @@
 This repo shows an end-to-end LLM fine-tuning + serving workflow for a product pricing task: run QLoRA/LoRA fine-tuning notebooks in src/fine_tuning/, then load the adapter for inference.
 It deploys a Modal pricing service in src/inference/ and provides a CLI (src/inference.py) to deploy, query prices, use an agent wrapper, and stream logs.
 
+## Architecture (high level)
+
+```mermaid
+flowchart LR
+  subgraph Train["Fine-tuning (reference)"]
+    TGPU["GPU training runtime<br/>Colab or similar"]
+    TCODE["src/fine_tuning<br/>QLoRA/LoRA notebooks + reference script"]
+    TGPU --> TCODE
+    TCODE --> ADAPT["LoRA adapter weights<br/>pushed to Hugging Face"]
+  end
+
+  subgraph HF["Hugging Face Hub"]
+    BASE["Base model<br/>Llama-3.2-3B"]
+    ADAPT
+    DATA["Training dataset<br/>items prompts"]
+  end
+
+  subgraph Infer["Inference and serving"]
+    CLI["Local CLI<br/>src/inference.py"]
+    PRE["Optional preprocessing<br/>src/inference/preprocessor.py<br/>LiteLLM to Groq"]
+    MODAL["Modal deployed app<br/>src/inference/pricing_service.py<br/>App name pricer-service"]
+    CLI --> PRE
+    CLI --> MODAL
+    PRE --> MODAL
+  end
+
+  DATA --> TCODE
+  BASE --> TCODE
+  BASE --> MODAL
+  ADAPT --> MODAL
+```
+
 ## Run (`src/inference.py`)
 
 Prereqs:
