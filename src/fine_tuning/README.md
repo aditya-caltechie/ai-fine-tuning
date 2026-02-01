@@ -4,6 +4,8 @@ This folder contains **fine-tuning notebooks** (and a plain-Python reference scr
 
 If you want to run them, the intended environment is **Google Colab** (GPU). Start here: [Google Colaboratory](https://colab.google/).
 
+Open these notebook on Google Collab and choose T4 envionment, which would run these notebooks on T4 GPU. It would load base modal and LORA weights there. Later you can run inference on those fine-tuned model ( base model + LORA weights)
+
 ---
 
 ## What’s in here?
