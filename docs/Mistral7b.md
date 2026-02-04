@@ -49,3 +49,10 @@ Here's a concise step-by-step flow for fine-tuning Mistral 7B (using Hugging Fac
 - CUDA's Role: Underpins everything—PyTorch calls CUDA for GPU tensors; PEFT/TRL/Transformers build on PyTorch; Ollama/llama.cpp optionally uses CUDA for inference.
 - Library Interplay: PyTorch (core tensor ops) → Transformers (model arch/load) → PEFT (efficient tuning) → TRL (training loop) → Ollama (deployment).
 - Tips: Use 16GB+ VRAM GPU; monitor OOM errors; start with small batch sizes. Test on small data first. Total time: Setup (1-2 hrs), Fine-tune (hours-days depending on data/GPU).
+
+# Additianl Notes: 
+
+- PyTorch and TensorFlow are two different deep learning frameworks — both very popular, both powerful, both used to build and train neural networks.
+- PyTorch → "I just write Python code and it runs on GPU magically". Easy debugging. Startups / most new ML engineers → PyTorch (especially with Hugging Face)
+- TensorFlow → "I build a nice structured model/pipeline and deploy it everywhere". Hard to debug. Large-scale production at Google-like companies → TensorFlow still very common
+
