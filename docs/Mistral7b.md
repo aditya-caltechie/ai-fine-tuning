@@ -2,6 +2,22 @@
 
 Here's a concise step-by-step flow for fine-tuning Mistral 7B (using Hugging Face ecosystem for efficiency), saving/loading weights, and running inference (e.g., via Ollama). This assumes a Linux-based NVIDIA GPU server. CUDA is the key bridge: it's NVIDIA's API for GPU-parallel computing, enabling PyTorch to offload computations to the GPU for faster training/inference (via torch.cuda).
 
+```
+NVIDIA Server (GPU + CUDA)
+        ↓
+1. Install Drivers + CUDA Toolkit 12.1/12.4 + cuDNN
+        ↓
+2. Python Environment (PyTorch with CUDA)
+        ↓
+3. Load Mistral-7B in 4-bit → Apply QLoRA (PEFT) → Train with TRL (SFTTrainer)
+        ↓
+4. Merge LoRA Adapter → Full fine-tuned model (safetensors)
+        ↓
+5. Convert to GGUF (llama.cpp) + Quantize (Q4_K_M or Q5_K_M)
+        ↓
+6. Import into Ollama → Run locally/offline
+```
+
 # Prerequisites (Setup Phase)
 
 ## 1. Hardware/Software Setup:
