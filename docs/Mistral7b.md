@@ -1,6 +1,6 @@
 # End-to-End Process for Fine-Tuning and Running Mistral 7B on NVIDIA GPU Server
 
-Here's a concise step-by-step flow for fine-tuning Mistral 7B (using Hugging Face ecosystem for efficiency), saving/loading weights, and running inference (e.g., via Ollama). This assumes a Linux-based NVIDIA GPU server. CUDA is the key bridge: it's NVIDIA's API for GPU-parallel computing, enabling PyTorch to offload computations to the GPU for faster training/inference (via torch.cuda).
+Here's a concise step-by-step flow for fine-tuning Mistral 7B (using Hugging Face ecosystem for efficiency), saving/loading weights, and running inference (e.g., via Ollama). This assumes a Linux-based NVIDIA GPU server. CUDA is the key bridge: it's NVIDIA's API for GPU-parallel computing, enabling PyTorch to offload computations to the GPU for faster training/inference (via torch.cuda). Below is high-level flow. 
 
 ```
 NVIDIA Server (GPU + CUDA)
@@ -16,6 +16,18 @@ NVIDIA Server (GPU + CUDA)
 5. Convert to GGUF (llama.cpp) + Quantize (Q4_K_M or Q5_K_M)
         ↓
 6. Import into Ollama → Run locally/offline
+```
+
+Alternatively if you want to run on vLLM, then you don't need to convert to GGUF (step 5, 6). Recommended workflow (clean & professional), but High GPU utilization. Also Ollma assumes you’re okay with quantization and you want CPU / Mac / lightweight usage, so convert your model to GGUF
+
+```
+1. Fine-tune Mistral-7B using HF + PyTorch
+
+2. Save model in HF format
+
+3. Run inference using:
+   - vLLM (GPU, fast, scalable). `vllm serve ./my-finetuned-mistral` 
+   - OR transformers.generate (simple testing)
 ```
 
 # Prerequisites (Setup Phase)
